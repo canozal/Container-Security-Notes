@@ -82,6 +82,7 @@ Check if whaler command is installed in our system.
 By default docker containers runs at the **root**  user.
 
 ---
+### Docker Networking ###
 
 Docker has several network drivers that we connect that we can use when creating the containers, inculude following
 1. Bridge \
@@ -89,9 +90,120 @@ Docker has several network drivers that we connect that we can use when creating
 • Containers on the same bridged network can speak to each other \
 • Containers on a bridged network can't connect to containers on other bridge \
 • Access to external network is allowed through NAT 
-2. Host
-3. Macvlan
-4. None
+2. Host \
+• Use the host's networking directly \
+• Ports exposed by the container are exposed on the external network using the host's IP
+3. Macvlan \
+• Attach VLAN to the host's network device (e.g. "ethO") \
+• Each container on the macvian network will receive its own MAC address \
+• Each container has full network
+4. None \
+• Networking is disabled \
+• Containers cannot communicate to each other \
+• Containers cannot communicate with external 
+
+---
+
+### Docker Persistance ###
+
+1. Bind mounts \
+A container can save the output/result/data using bind mounts. Think of them like a shared folder.
+You can share a folder using the -v/-volume option
+```
+$ docker run -v HOST_DIR:DOCKER_DIR image-name
+$ docker run -v ./app:/app django.nv:1.0
+$ docker run -v $(pwd):/app
+```
+2. Volumes \
+Unlike bind mounts, volumes are created, managed by Docker and are platform independent.
+Manages permissions and other issues with ease. Volumes are the preferred way of sharing the data as its not tied to underlying file system. \
+You can share the volumes in a similar way as bind mount.
+```
+$ docker run -v VOLUME:DOCKER_DIR image-name
+$ docker run -v demo-volume:/app django.nv:1.0
+$ docker run -v demo-volume:/app django.nv:1.0
+
+# Stored under /var/lib/docker/volumes
+```
+
+3. tmpts
+
+---
+
+### cp of docker ###
+
+Docker cp allows you to copy data from container into the host. \
+Copy data from a container with docker cp 
+
+``$ docker cp ubuntu1:/opt/tf-output.json .``
+
+---
+
+### Docker Registry
+
+A registry is a place where you can store and retrieve Docker images. Docker supports both public and private registries.
+
+---
+
+### Analysis of The Attack Surface
+
+• List networks and identify the network attached to the containers \
+• Identify mount points to explore information that could be exposed through the file system \
+• Use docker inspect to gather container information \
+• Identify history of an image and its layers \
+• Identify exposed ports to analyze any vulnerable applications \
+• Review the resource limits of containers
+
+```
+# List Networks
+docker network ls
+
+# List Volumes
+docker volumes ls
+
+#Inspect various docker objects (Displays internal details about a docker object.)
+docker inspect containerid 
+docker inspect imagename 
+docker network inspect
+
+# Docker system information
+docker system events 
+docker system --help
+
+# Image Layers and Dockerfile instructions
+docker history imageid
+
+# Get running processes inside a container
+docker top containerid
+
+# Get container resource limits for memory, cpu
+# Review current resource consumption of a container.
+docker stats
+docker stats con-stats
+
+```
+
+---
+
+### Are You Inside a Container?
+
+1. File System \
+**Listing the root dir**
+
+Often times there is a file name `.dockerenv` in the root directory of a container
+
+- `ls -al .dockerenv`
+
+2. Cgroups
+**Listing the cgroups**
+
+Reviewing the init processes (PID 1) cgroup will show docker mounts
+
+- `cat /proc/1/cgroup`
+- `cat /proc/self/cgroup`
+
+
+
 
 
 
