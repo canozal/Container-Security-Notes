@@ -272,7 +272,7 @@ To display only the network information of a container and reduce the output siz
 
 ---
 
-** Exploring System Information and Events of Docker **
+**Exploring System Information and Events of Docker**
 
 ``docker system info``
 
@@ -388,12 +388,35 @@ The command starts an nginx container with the NET_ADMIN capability added.
 1. ***Identifying Namespace Misconfigurations*** \
 Namespaces are critical for creating a distinct, isolated working environment for each container, providing separation of processes, networking, IPC, and other resources.
 
-#### TASK 1
+##### Case 1: Embedding Host Process Namespaces
+
 ``docker run -d --pid=host --name alp1 alpine sleep infinity`` \
 The command ***docker run -d --pid=host --name alp1 alpine sleep infinity*** is vulnerable because it shares the PID namespace between the container and the host, breaking the isolation that containers are supposed to provide. This allows processes inside the container to view and potentially interact with all host processes, increasing the risk of information leakage and privilege escalation. An attacker with access to the container could manipulate host processes, send signals to them, or gather sensitive data about the system. As a result, this setup poses significant security risks, especially in untrusted or production environments, and should be avoided unless strictly necessary for specific use cases like debugging.
 
-#### Task 2
+##### Case 2: Embedding Shared Mount Namespace
 Creating a Docker container with the host’s mount namespace is a risky measure as it allows the container to share filesystems with the host. \
 ``docker run -dit --name alp2 -v /:/hostroot:rw alpine``
 
 2. ***Identifying Capabilities Misconfigurations***
+Misconfiguration of Linux Capabilities can cause potential security risks, so it’s crucial to ensure the configured capabilities are exactly what a container needs and nothing more.
+
+#### Case 1: Unnecessary Root Level Capability
+Unnecessary Root Level Capability refers to granting a container or process elevated privileges that it doesn’t need to perform its functions, similar to giving it root access.
+
+Limit capabilities to the bare minimum required for a container to function.
+
+``docker run -it --rm --cap-add=NET_ADMIN alpine``
+
+> Container runtimes like docker for instance start a container with only required capabilities. The [needed capabilities](https://github.com/moby/moby/blob/master/oci/caps/defaults.go#L6-L19) for running a docker container does not include the NET_ADMIN capability.
+
+#### Case 2: Preventing Unprivileged Root Capabilities
+Let’s consider an Alpine Linux container running a service as root. We want to explicitly drop the CAP_DAC_OVERRIDE capability from the root user, effectively preventing the issue from reading certain files within the container. \
+``docker run -it --rm --cap-drop CAP_DAC_OVERRIDE alpine``
+
+3. Identifying Networking Misconfigurations
+
+When all containers can communicate with each other without restriction, there is unrestricted network access, which may not be a desired setting in certain environments.
+
+``docker network create -o "com.docker.network.bridge.enable_icc"="false" isolated_network``
+
+> The whole command -o “com.docker.network.bridge.enable_icc”=”false” sets the Inter-Container Communication (ICC) to false in the network created by the docker which means that containers in the same network will not be able to communicate with each other automatically, unless explicitly linked using --link.
