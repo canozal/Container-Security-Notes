@@ -387,4 +387,120 @@ After that, execute Docker Bench with the specified benchmark version:
 To identify configuration weakness in docker, we can execute the following command. \
 ``docker-bench``
 
+---
+
+### Docker Host Security Configurations
+Kernel Hardening using Seccomp and AppArmor
+
+#### SecComp
+• SecComp is Secure Computing Mode in Linux Kernel \
+• Seccomp helps in limiting the system calls a process can make \
+• Docker, by default disables 44 system calls out of 313 system calls in 64bit Linux systems (can be disabled) \
+• The default SecComp policy used by Docker is documented [here](https://docs.docker.com/engine/security/seccomp/)
+
+#### AppArmor
+• AppArmor is a Mandatory Access Control Framework (MAC) acts as a
+Linux Security Module (LSM) in kernel. \
+• AppArmor is path based, and it can help in mediating a process' access to: \
+• Files \
+• Loading of libraries \
+• Coarse-grained network (protocol, type, domain) \
+• And many other objects \
+• For all containers, Docker by default generates and loads an AppArmor profile named docker-default
+
+***AppArmor restricts access to files, directories, and system resources at the process level, while Seccomp limits the system calls a container can make to the Linux kernel, and both work together to enhance container security.***
+
+---
+
+### Network Security in Containers
+• Ensure docker.sock is not mounted on a container \
+• If Docker daemon is configured to accept external requests: \
+• Use TLS \
+• Use Authentication \
+• Ensure the network namespace of the host is not shared with the container
+
+---
+
+### Signing Container Images for Trust
+In this scenario, you will learn how to sign your container image using Cosign.
+
+Cosign is a tool that simplifies the signing and verification of the container images. Cosign can help in signing your application containers securely deploying them and running them in production.
+
+1. Install Cosign
+```
+wget -O /usr/local/bin/cosign https://github.com/sigstore/cosign/releases/download/v2.2.3/cosign-linux-amd64
+chmod +x /usr/local/bin/cosign
+```
+
+2. Signing an Image \
+First, we need to download the source code of the project from our git repository. \
+``git clone https://gitlab.practical-devsecops.training/pdso/django.nv`` \
+``cd django.nv`` \
+``docker build -t harbor-0x3qnu8a.lab.practical-devsecops.training/library/django.nv:1.0 .`` \
+``docker push harbor-0x3qnu8a.lab.practical-devsecops.training/library/django.nv:1.0`` \
+Generate a key pair \
+``cosign generate-key-pair`` \
+Enable Cosign option in Harbor by visiting website \
+we are ready to sign container using Cosign and the signatures will be stored in the OCI registry.
+``cosign sign --key cosign.key harbor-0x3qnu8a.lab.practical-devsecops.training/library/django.nv:1.0`` \
+To get the image digest we can use the following command. \
+``docker inspect harbor-0x3qnu8a.lab.practical-devsecops.training/library/django.nv:1.0 --format='{{index .Id}}'``
+
+3. Verify a container’s signature \
+``cosign verify --key cosign.pub harbor-0x3qnu8a.lab.practical-devsecops.training/library/django.nv:1.0``
+
+
+---
+
+### Advanced Docker Registry
+
+ let’s deploy the public registry (without any authentication) using the following command. \
+ ``docker run -d --name public-registry -p 80:5000 --restart=always registry:2.7.1``
+
+For authentication, we will create a htpasswd file with the help of httpd docker image. \
+``docker run --entrypoint htpasswd httpd:2 -Bbn root pdso-training > /opt/htpasswd`` \
+Next, deploy the private registry using the following command. \
+```docker run -d --name private-registry -p 8080:5000 --restart=always -v /opt/htpasswd:/etc/htpasswd -e REGISTRY_AUTH=htpasswd -e REGISTRY_AUTH_HTPASSWD_REALM="Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/etc/htpasswd registry:2.7.1```
+
+---
+
+### Container Linting using Dockle
+
+Container Image Linter for Security, helping build the best practice Docker image, easy to start.
+
+``curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.11/dockle_0.4.11_Linux-64bit.deb``
+
+``dpkg -i dockle.deb && rm dockle.deb``
+
+``dockle python:3.4-alpine``
+
+``dockle -f json goodwithtech/test-image:v1``
+
+##### Challenges
+***Task 1:*** Explore various options provided by the dockle tool \
+``dockle -h``
+
+***Task 2:*** Scan goodwithtech/test-image:v1 image using dockle and analyze the result \
+``dockle goodwithtech/test-image:v1``
+
+***Task 3:*** Build a new image named goodwithtech/secure-image, and the image should fix all of the issues with a FATAL level based on previous task
+```
+cat <<EOT > /dockle-ci-test/Dockerfile
+FROM debian:latest
+
+RUN apt-get update \
+    && apt-get install -y git \
+    && rm -rf /var/lib/apt/lists
+RUN chmod u+s /etc/shadow
+RUN chmod g+s /etc/passwd
+COPY sample.txt /app/sample.txt
+RUN chmod u+s /app/sample.txt
+RUN chmod g+s /app/sample.txt
+RUN chmod g-s /app/sample.txt
+
+VOLUME /usr
+EOT
+```
+
+
 
