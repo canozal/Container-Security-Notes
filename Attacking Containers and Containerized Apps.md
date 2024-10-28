@@ -74,8 +74,7 @@ Then, pushing to the registry. \
 • We can mount the host's filesystem inside the container and read/write/update files
 
 Finding --privileged Containers \
-``$ docker ps --quiet --all | xargs docker inspect --format '{{ .Id }}:
-Privileged={{ HostConfig Privileged``
+``$ docker ps --quiet --all | xargs -r docker inspect --format '{{ .Id }}: Privileged={{ .HostConfig.Privileged }}'``
 
 ---
 
