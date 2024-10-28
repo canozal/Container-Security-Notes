@@ -25,7 +25,9 @@ Unless explicitly configured, public registries does not need authentication usi
 
 ```
 ***Remember***
-Organizations must be careful in managing their container images, as they may contain vulnerabilities or be infected with malware. An unauthorized user with access to push, pull or update container images can cause severe damage by introducing malicious images or stealing sensitive data using reverse engineering. Performing any unauthorized actions on the container registry can lead to a supply chain attack, a type of cyberattack where an attacker targets a software vendor’s third-party suppliers, compromising their platform or software and granting access to the vendor’s network, thus exploiting any weakness in their security measures.
+Organizations must be careful in managing their container images, as they may contain vulnerabilities or be infected with malware.
+An unauthorized user with access to push, pull or update container images can cause severe damage by introducing malicious images or stealing sensitive data using reverse engineering.
+Performing any unauthorized actions on the container registry can lead to a supply chain attack, a type of cyberattack where an attacker targets a software vendor’s third-party suppliers, compromising their platform or software and granting access to the vendor’s network, thus exploiting any weakness in their security measures.
 ```
 
 ***Payload to gain reverse shell access*** \
