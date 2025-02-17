@@ -49,7 +49,8 @@ docker allows us to name containers using the --name argumant \
 
 1. Install dive
 ```
-Dive is a tool for exploring a docker image, layer contents, and discovering ways to shrink the size of your Docker/OCI image.
+Dive is a tool for exploring a docker image, layer contents,
+and discovering ways to shrink the size of your Docker/OCI image.
 ```
 Let’s pull a Python image to delve deeper into this exploration. \
 `` docker pull python:3.4-alpine ``
